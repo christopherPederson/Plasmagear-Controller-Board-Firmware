@@ -24,17 +24,54 @@ const int Fan_Pin_PWR_Btn = 11;
 const int Fan_Pin_PWM = 10;
 const int32_t PWM_Frequency = 20000;// set fan control PWM frequency to 20KHz
 
-bool inputs_permitted = true;// prevents users from being able to perform multiple inputs or hold down the input
+bool Inputs_Permitted = true;// prevents users from being able to perform multiple inputs or hold down the input
 
 bool PWR_On = false;// determines if inputs are unlocked
 
-const long 30min_millis = 1800000;
+const long Thirty_Min_Millis = 1800000;
 long Time_Duration = 0;
 long Time_Duration_Start = 0; 
 
-  bool
-Timer_Active()
+int Speed_Display_Value = 0;
+int Time_Display_Value = 0;
+int Speed_Value_Ary[] = {0,77,179,255};
+int Speed_LED_Ary[] = {Fan_Pin_Speed_Lo,Fan_Pin_Speed_Md,Fan_Pin_Speed_Hi};
 
+  void 
+set_speed_leds() 
+  {
+  // Set all pins to HIGH
+  for(int i = 0; i < sizeof(Speed_LED_Ary) / sizeof(Speed_LED_Ary[0]); i++) 
+    {
+    digitalWrite(Speed_LED_Ary[i], HIGH);
+    }
+  
+  // Set pins corresponding to Speed_Display_Value to LOW
+  for(int i = 0; i < Speed_Display_Value; i++) 
+    {
+    digitalWrite(Speed_LED_Ary[i], LOW);
+    }
+  }
+
+  void
+set_PWM()
+  {
+  pwmWrite(Fan_Pin_PWM, Speed_Value_Ary[3]);
+  delay(100);
+  pwmWrite(Fan_Pin_PWM, Speed_Value_Ary[Speed_Display_Value]);
+  }
+
+  void
+set_speed()
+  {
+  if(Speed_Display_Value > 3)
+    {
+    Speed_Display_Value = 1;
+    }
+  Serial.println(Speed_Display_Value);
+  set_speed_leds();
+  set_PWM();
+  }
 
   int
 increment_time()
@@ -45,28 +82,31 @@ increment_time()
   int
 increment_speed()
   {
-  Serial.println("speed");
+    Speed_Display_Value++;
+    set_speed();
   }
 
   void
-handle_btn_press(function())
+handle_btn_press(void(*function)())
   {
-  if (inputs_permitted && PWR_On)
+  if (Inputs_Permitted && PWR_On)
     {
-    inputs_permitted = false;
+    Inputs_Permitted = false;
     function();
-    delay(300);
+    delay(150);
     }
   }
 
   void
 handle_PWR_press()
   {
-  if (inputs_permitted)
+  if (Inputs_Permitted)
     {
-    inputs_permitted = false;
+    Speed_Display_Value = PWR_On ? 0 : 1;
+    set_speed();
+    Inputs_Permitted = false;
     PWR_On = !PWR_On;
-    delay(300);
+    delay(150);
     }
   }
 
@@ -122,7 +162,7 @@ loop()
         {
         case 0: //No Input
           {
-          inputs_permitted = true;
+          Inputs_Permitted = true;
           break;
           }
         case 11: //Power on
@@ -131,12 +171,12 @@ loop()
           }
         case 9: //Time
           {
-          handle_btn_press(increment_speed());
+          handle_btn_press(increment_time);
           break;
           }
         case 2: //Speed
           {
-          handle_btn_press(increment_speed());
+          handle_btn_press(increment_speed);
           break;
           }
         }
