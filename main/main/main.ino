@@ -28,15 +28,51 @@ bool Inputs_Permitted = true;// prevents users from being able to perform multip
 
 bool PWR_On = false;// determines if inputs are unlocked
 
-const long Thirty_Min_Millis = 1800000;
-long Time_Duration = 0;
 long Time_Duration_Start = 0; 
 
 int Speed_Display_Value = 0;
 int Time_Display_Value = 0;
-int Speed_Value_Ary[] = {0,77,179,255};
-int Speed_LED_Ary[] = {Fan_Pin_Speed_Lo,Fan_Pin_Speed_Md,Fan_Pin_Speed_Hi};
 
+const int Speed_Value_Ary[] = {0,77,179,255};
+const int Speed_LED_Ary[] = {Fan_Pin_Speed_Lo,Fan_Pin_Speed_Md,Fan_Pin_Speed_Hi};
+
+const long Time_Value_Ary[] = {0,1800000,3600000,5400000};
+const int Time_LED_Ary[] = {Fan_Pin_Time_30,Fan_Pin_Time_60,Fan_Pin_Time_90};
+
+  void
+set_time_leds()
+  {
+  // Set all pins to HIGH
+  for(int i = 0; i < sizeof(Time_LED_Ary) / sizeof(Time_LED_Ary[0]); i++) 
+    {
+    digitalWrite(Time_LED_Ary[i], HIGH);
+    }
+  
+  // Set pins corresponding to time_Display_Value to LOW
+  for(int i = 0; i < Time_Display_Value; i++) 
+    {
+    digitalWrite(Time_LED_Ary[i], LOW);
+    }
+  }
+  void
+manage_timer()
+  {
+    if(Time_Duration_Start + Time_Value_Ary[Time_Display_Value] < millis() && Time_Display_Value != 0)
+      {
+      handle_PWR_press();
+      }
+  }
+  void
+set_timer()
+  {
+  Time_Duration_Start = millis();
+  if(Time_Display_Value > 3)
+    {
+    Time_Display_Value = 0;
+    }
+  set_time_leds();
+  manage_timer();
+  }
   void 
 set_speed_leds() 
   {
@@ -68,7 +104,6 @@ set_speed()
     {
     Speed_Display_Value = 1;
     }
-  Serial.println(Speed_Display_Value);
   set_speed_leds();
   set_PWM();
   }
@@ -76,7 +111,8 @@ set_speed()
   int
 increment_time()
   {
-  Serial.println("time");
+  Time_Display_Value++;
+  set_timer();
   }
 
   int
@@ -103,7 +139,9 @@ handle_PWR_press()
   if (Inputs_Permitted)
     {
     Speed_Display_Value = PWR_On ? 0 : 1;
+    Time_Display_Value = 0;
     set_speed();
+    set_timer();
     Inputs_Permitted = false;
     PWR_On = !PWR_On;
     delay(150);
@@ -180,4 +218,5 @@ loop()
           break;
           }
         }
+        manage_timer();
     }
