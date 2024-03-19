@@ -12,35 +12,31 @@
 const int Fan_Pin_Speed_Lo = 3;
 const int Fan_Pin_Speed_Md = 4;
 const int Fan_Pin_Speed_Hi = 5;
-
 const int Fan_Pin_Time_90 = 6;
 const int Fan_Pin_Time_60 = 7;
 const int Fan_Pin_Time_30 = 8;
-
 const int Fan_Pin_Speed_Btn = 2;
 const int Fan_Pin_Time_Btn = 9;
 const int Fan_Pin_PWR_Btn = 11;
-
 const int Fan_Pin_PWM = 10;
+
+//Define utility constants
 const int32_t PWM_Frequency = 20000;// set fan control PWM frequency to 20KHz
+const int Speed_Value_Ary[] = {0,77,179,255};// used to set PWM duty cycle
+const int Speed_LED_Ary[] = {Fan_Pin_Speed_Lo,Fan_Pin_Speed_Md,Fan_Pin_Speed_Hi};// pins for fan speed leds
+const long Time_Value_Ary[] = {0,1800000,3600000,5400000};// utility values for timer settings
+const int Time_LED_Ary[] = {Fan_Pin_Time_30,Fan_Pin_Time_60,Fan_Pin_Time_90};// pins for timer leds
 
+//Define global variables 
 bool Inputs_Permitted = true;// prevents users from being able to perform multiple inputs or hold down the input
-
 bool PWR_On = false;// determines if inputs are unlocked
+long Time_Duration_Start = 0; // this will be changed when timer is activated to be equal to the run time of the program. 
+int Speed_Display_Value = 0; //tracks desired speed value
+int Time_Display_Value = 0; //tracks desired timer value
 
-long Time_Duration_Start = 0; 
-
-int Speed_Display_Value = 0;
-int Time_Display_Value = 0;
-
-const int Speed_Value_Ary[] = {0,77,179,255};
-const int Speed_LED_Ary[] = {Fan_Pin_Speed_Lo,Fan_Pin_Speed_Md,Fan_Pin_Speed_Hi};
-
-const long Time_Value_Ary[] = {0,1800000,3600000,5400000};
-const int Time_LED_Ary[] = {Fan_Pin_Time_30,Fan_Pin_Time_60,Fan_Pin_Time_90};
-
+// Utility function declerations
   void
-set_time_leds()
+set_time_leds()//manage time LEDs
   {
   // Set all pins to HIGH
   for(int i = 0; i < sizeof(Time_LED_Ary) / sizeof(Time_LED_Ary[0]); i++) 
@@ -54,27 +50,9 @@ set_time_leds()
     digitalWrite(Time_LED_Ary[i], LOW);
     }
   }
-  void
-manage_timer()
-  {
-    if(Time_Duration_Start + Time_Value_Ary[Time_Display_Value] < millis() && Time_Display_Value != 0)
-      {
-      handle_PWR_press();
-      }
-  }
-  void
-set_timer()
-  {
-  Time_Duration_Start = millis();
-  if(Time_Display_Value > 3)
-    {
-    Time_Display_Value = 0;
-    }
-  set_time_leds();
-  manage_timer();
-  }
+
   void 
-set_speed_leds() 
+set_speed_leds()//manage speed LEDs
   {
   // Set all pins to HIGH
   for(int i = 0; i < sizeof(Speed_LED_Ary) / sizeof(Speed_LED_Ary[0]); i++) 
@@ -90,17 +68,40 @@ set_speed_leds()
   }
 
   void
+manage_timer()
+  {
+    if(Time_Duration_Start + Time_Value_Ary[Time_Display_Value] < millis() && Time_Display_Value != 0)
+      {
+      // checks if timer is running and if the timer has exceeded set time 
+      //powers off the device
+      handle_PWR_press();
+      }
+  }
+
+  void
+set_timer()
+  {
+  Time_Duration_Start = millis(); //sets start time to current value
+  if(Time_Display_Value > 3) // if the desired time value exceeds 3 it will be set back to 0 
+    {
+    Time_Display_Value = 0;
+    }
+  set_time_leds();
+  manage_timer();
+  }
+
+  void
 set_PWM()
   {
-  pwmWrite(Fan_Pin_PWM, Speed_Value_Ary[3]);
+  pwmWrite(Fan_Pin_PWM, Speed_Value_Ary[3]);// the fans require an initial start jump
   delay(100);
-  pwmWrite(Fan_Pin_PWM, Speed_Value_Ary[Speed_Display_Value]);
+  pwmWrite(Fan_Pin_PWM, Speed_Value_Ary[Speed_Display_Value]);// sets PWM to one of the preset values
   }
 
   void
 set_speed()
   {
-  if(Speed_Display_Value > 3)
+  if(Speed_Display_Value > 3)// loops desired value
     {
     Speed_Display_Value = 1;
     }
@@ -123,11 +124,11 @@ increment_speed()
   }
 
   void
-handle_btn_press(void(*function)())
+handle_btn_press(void(*function)())//pass desired function pointer 
   {
   if (Inputs_Permitted && PWR_On)
     {
-    Inputs_Permitted = false;
+    Inputs_Permitted = false;// prevents multiple or repeated inputs 
     function();
     delay(150);
     }
@@ -138,18 +139,18 @@ handle_PWR_press()
   {
   if (Inputs_Permitted)
     {
-    Speed_Display_Value = PWR_On ? 0 : 1;
-    Time_Display_Value = 0;
+    Speed_Display_Value = PWR_On ? 0 : 1; //when powered on the device should start on the lowest speed setting
+    Time_Display_Value = 0; // starts with no timer
     set_speed();
     set_timer();
-    Inputs_Permitted = false;
-    PWR_On = !PWR_On;
+    Inputs_Permitted = false; // prevents multiple or repeated inputs 
+    PWR_On = !PWR_On; //toggle power state 
     delay(150);
     }
   }
 
   int
-check_input()
+check_input()//looks for active pins
   {
   if (digitalRead(Fan_Pin_PWR_Btn) == HIGH)
       {
@@ -165,16 +166,22 @@ check_input()
       }
   return 0;
   }
+
+  void
+set_leds_high()
+  {
+  for (int i = 3; i < 9; i++)
+      {
+      digitalWrite(i, HIGH);
+      }
+  }
+
+// Runtime functions (setup and loop)
   void 
 setup()
     {
+    set_leds_high(); //set all LEDs to LOW (check schematic for more info)
     Serial.begin(9600);
-
-    //set all LEDs to LOW (check schematic for more info)
-    for (int i = 3; i < 9; i++)
-    {
-    digitalWrite(i, HIGH);
-    }
 
     //Set pin modes
     pinMode(Fan_Pin_Speed_Lo, OUTPUT);
@@ -198,8 +205,10 @@ loop()
     {
       switch(check_input())
         {
+        default:
         case 0: //No Input
           {
+          manage_timer();
           Inputs_Permitted = true;
           break;
           }
@@ -218,5 +227,4 @@ loop()
           break;
           }
         }
-        manage_timer();
     }
