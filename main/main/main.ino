@@ -3,10 +3,10 @@
 //Date: 2024-03-18
 
 //Version Control
-// 2024-03-18 (V1.0) - Initial release
+// 2024-03-18 (V1.0) ~ Initial release
 
 //Include libraries
-#include <PWM.h>
+#include <PWM.h>// cant use built in PWM functionality as we need to change the frequency
 
 //Define constants
 const int Fan_Pin_Speed_Lo = 3;
