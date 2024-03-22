@@ -9,16 +9,16 @@
 #include <PWM.h>// cant use built in PWM functionality as we need to change the frequency
 
 //Define constants
-const int Fan_Pin_Speed_Lo = 19;
-const int Fan_Pin_Speed_Md = 18;
-const int Fan_Pin_Speed_Hi = 17;
-const int Fan_Pin_Time_90 = 16;
-const int Fan_Pin_Time_60 = 15;
-const int Fan_Pin_Time_30 = 14;
+const int Fan_Pin_Speed_Lo = 3;
+const int Fan_Pin_Speed_Md = 4;
+const int Fan_Pin_Speed_Hi = 5;
+const int Fan_Pin_Time_90 = 6;
+const int Fan_Pin_Time_60 = 7;
+const int Fan_Pin_Time_30 = 8;
 const int Fan_Pin_Speed_Btn = 2;
-const int Fan_Pin_Time_Btn = 1;
-const int Fan_Pin_PWR_Btn = 0;
-const int Fan_Pin_PWM = 13;
+const int Fan_Pin_Time_Btn = 9;
+const int Fan_Pin_PWR_Btn = 11;
+const int Fan_Pin_PWM = 10;
 
 //Define utility constants
 const int32_t PWM_Frequency = 20000;// set fan control PWM frequency to 20KHz
