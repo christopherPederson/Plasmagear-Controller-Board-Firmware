@@ -9,23 +9,24 @@
 #include <PWM.h>  // cant use built in PWM functionality as we need to change the frequency
 
 //Define constants
-const int Fan_Pin_Speed_Lo  =  3;
-const int Fan_Pin_Speed_Md  =  4;
-const int Fan_Pin_Speed_Hi  =  5;
-const int Fan_Pin_Time_90   =  6;
-const int Fan_Pin_Time_60   =  7;
-const int Fan_Pin_Time_30   =  8;
-const int Fan_Pin_Speed_Btn =  2;
-const int Fan_Pin_Time_Btn  =  9;
-const int Fan_Pin_PWR_Btn   = 11;
-const int Fan_Pin_PWM       = 10;
+#define Fan_Pin_Speed_Lo   3
+#define Fan_Pin_Speed_Md   4
+#define Fan_Pin_Speed_Hi   5
+#define Fan_Pin_Time_90    6
+#define Fan_Pin_Time_60    7
+#define Fan_Pin_Time_30    8
+#define Fan_Pin_Speed_Btn  2
+#define Fan_Pin_Time_Btn   9
+#define Fan_Pin_PWR_Btn   11
+#define Fan_Pin_PWM       10
 
 //Define utility constants
-const int32_t PWM_Frequency     = 20000;                                                    // set fan control PWM frequency to 20KHz
+#define       PWM_Frequency 20000                                                           // set fan control PWM frequency to 20KHz
 const int     Speed_Value_Ary[] = { 0, 77, 179, 255 };                                      // used to set PWM duty cycle
 const int     Speed_LED_Ary[]   = { Fan_Pin_Speed_Lo, Fan_Pin_Speed_Md, Fan_Pin_Speed_Hi }; // pins for fan speed leds
 const long    Time_Value_Ary[]  = { 0, 1800000, 3600000, 5400000 };                         // utility values for timer settings
-const int     Time_LED_Ary[]    = { Fan_Pin_Time_30,Fan_Pin_Time_60,Fan_Pin_Time_90 };      // pins for timer leds
+const int     Time_LED_Ary[]    = { Fan_Pin_Time_30, Fan_Pin_Time_60, Fan_Pin_Time_90 };    // pins for timer leds
+const int     LED_Pin_Ary[]     = { Fan_Pin_Speed_Lo, Fan_Pin_Speed_Md, Fan_Pin_Speed_Hi, Fan_Pin_Time_30, Fan_Pin_Time_60, Fan_Pin_Time_90 };
 
 //Define global variables 
 bool Inputs_Permitted    = true;   // prevents users from being able to perform multiple inputs or hold down the input
@@ -170,9 +171,9 @@ check_input()  // looks for active pins
   void
 set_leds_high()
   {
-  for (int i = 3; i < 9; i++)
+  for (int i = 0; i < (sizeof(LED_Pin_Ary)/sizeof(LED_Pin_Ary[0])); i++)
     {
-    digitalWrite(i, HIGH);
+    digitalWrite(LED_Pin_Ary[i], HIGH);
     }
   }
 
@@ -206,18 +207,18 @@ loop()
   {
   switch(check_input())
     {
-    case 0: // No Input
+    case 0:                             // No Input
       manage_timer();
       Inputs_Permitted = true;
     break;
-    case 11: // Power on
+    case Fan_Pin_PWR_Btn:               // Power on
       handle_PWR_press();
     break;
-    case 9: // Time
+    case Fan_Pin_Time_Btn:              // Time
       handle_btn_press(increment_time);
     break;
-    case 2: // Speed
+    case Fan_Pin_Speed_Btn:             // Speed
       handle_btn_press(increment_speed);
     break;
-   }
+    }
   }
