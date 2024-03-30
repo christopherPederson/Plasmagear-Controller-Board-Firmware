@@ -6,9 +6,12 @@
 // 2024-03-18 (V1.0) ~ Initial release
 
 // Include libraries
-#include <PWM.h>  // cant use built in PWM functionality as we need to change the frequency
+#include <PWM.h>  // can't use built-in PWM functionality as we need to change the frequency
+
+typedef const int State_Option;
 
 //Define constants
+
 #define Fan_Pin_Speed_Lo   3
 #define Fan_Pin_Speed_Md   4
 #define Fan_Pin_Speed_Hi   5
@@ -20,8 +23,14 @@
 #define Fan_Pin_PWR_Btn   11
 #define Fan_Pin_PWM       10
 
+#define PWM_Frequency  20000 //fan control PWM frequency to 20KHz (trust me bro)
+
+State_Option No_Input = -1;
+State_Option Time_Input = Fan_Pin_Time_Btn;
+State_Option Speed_Input = Fan_Pin_Speed_Btn;
+State_Option PWR_Input = Fan_Pin_PWR_Btn;
+
 //Define utility constants
-#define       PWM_Frequency 20000                                                           // set fan control PWM frequency to 20KHz
 const int     Speed_Value_Ary[] = { 0, 77, 179, 255 };                                      // used to set PWM duty cycle
 const int     Speed_LED_Ary[]   = { Fan_Pin_Speed_Lo, Fan_Pin_Speed_Md, Fan_Pin_Speed_Hi }; // pins for fan speed leds
 const long    Time_Value_Ary[]  = { 0, 1800000, 3600000, 5400000 };                         // utility values for timer settings
@@ -31,36 +40,32 @@ const int     LED_Pin_Ary[]     = { Fan_Pin_Speed_Lo, Fan_Pin_Speed_Md, Fan_Pin_
 //Define global variables 
 bool Inputs_Permitted    = true;   // prevents users from being able to perform multiple inputs or hold down the input
 bool PWR_On              = false;  // determines if inputs are unlocked
-long Time_Duration_Start = 0;      // this will be changed when timer is activated to be equal to the run time of the program. 
+long Time_Duration_Start = 0;      //This will be changed when the timer is activated to be equal to the run time of the program. 
 int Speed_Display_Value  = 0;      // tracks desired speed value
 int Time_Display_Value   = 0;      // tracks desired timer value
 
-// Utility function declerations
+// Utility function declarations
   void
-set_time_leds()                    // manage time LEDs
+set_time_leds()                                                                 // manage time LEDs
   {
-  // Set all pins to HIGH
-  for(int i = 0; i < (sizeof(Time_LED_Ary) / sizeof(Time_LED_Ary[0])); i++) 
+  for (int i = 0; i < (sizeof(Time_LED_Ary) / sizeof(Time_LED_Ary[0])); i++)    // Set all pins to HIGH
     {
     digitalWrite(Time_LED_Ary[i], HIGH);
     }
-  // Set pins corresponding to time_Display_Value to LOW
-  for(int i = 0; i < Time_Display_Value; i++) 
+  for (int i = 0; i < Time_Display_Value; i++)                                  // Set pins corresponding to time_Display_Value to LOW 
     {
     digitalWrite(Time_LED_Ary[i], LOW);
     }
   }
-
+ 
   void 
-set_speed_leds()                   // manage speed LEDs
+set_speed_leds()                                                                // manage speed LEDs
   {
-  // Set all pins to HIGH
-  for(int i = 0; i < (sizeof(Speed_LED_Ary) / sizeof(Speed_LED_Ary[0])); i++) 
+  for (int i = 0; i < (sizeof(Speed_LED_Ary) / sizeof(Speed_LED_Ary[0])); i++)  // Set all pins to HIGH
     {
     digitalWrite(Speed_LED_Ary[i], HIGH);
     }
-  // Set pins corresponding to Speed_Display_Value to LOW
-  for(int i = 0; i < Speed_Display_Value; i++) 
+  for (int i = 0; i < Speed_Display_Value; i++)                                 // Set pins corresponding to Speed_Display_Value to LOW
     {
     digitalWrite(Speed_LED_Ary[i], LOW);
     }
@@ -71,7 +76,7 @@ manage_timer()
   {
   if (Time_Duration_Start + Time_Value_Ary[Time_Display_Value] < millis()  &&  Time_Display_Value != 0)
       {
-      // checks if timer is running and if the timer has exceeded set time 
+      // checks if the timer is running and if the timer has exceeded set time 
       // powers off the device
       handle_PWR_press();
       }
@@ -81,7 +86,7 @@ manage_timer()
 set_timer()
   {
   Time_Duration_Start = millis();    // sets start time to current value
-  if (Time_Display_Value > 3)        // if the desired time value exceeds 3 it will be set back to 0 
+  if (Time_Display_Value > 3)        // if the desired time value exceeds 3, it will be set back to 0 
       {
       Time_Display_Value = 0;
       }
@@ -138,7 +143,7 @@ handle_PWR_press()
   {
   if (Inputs_Permitted)
       {
-      Speed_Display_Value = PWR_On ? 0 : 1; // when powered on the device should start on the lowest speed setting
+      Speed_Display_Value = PWR_On ? 0 : 1; // when powered on, the device should start on the lowest speed setting
       Time_Display_Value = 0;               // starts with no timer
       set_speed();
       set_timer();
@@ -148,24 +153,24 @@ handle_PWR_press()
       }
   }
 
-  int
+  State_Option
 check_input()  // looks for active pins
   {
   if (digitalRead(Fan_Pin_PWR_Btn) == HIGH)
       {
-      return(Fan_Pin_PWR_Btn);
+      return(PWR_Input);
       }
     else
       if (digitalRead(Fan_Pin_Time_Btn) == HIGH)
           {
-          return(Fan_Pin_Time_Btn);
+          return(Time_Input);
           }
         else 
           if (digitalRead(Fan_Pin_Speed_Btn) == HIGH)
               {
-              return(Fan_Pin_Speed_Btn);
+              return(Speed_Input);
               }
-  return 0;
+  return No_Input;
   }
 
   void
@@ -182,7 +187,7 @@ set_leds_high()
   void 
 setup()
   {
-  set_leds_high(); //set all LEDs to LOW (check schematic for more info)
+  set_leds_high(); //set all LEDs to LOW (check the schematic for more info)
   Serial.begin(9600);
   //
   // Set pin modes
@@ -205,19 +210,19 @@ setup()
   void 
 loop()
   {
-  switch(check_input())
+  switch (check_input())
     {
-    case 0:                             // No Input
+    case No_Input:                          // No Input
       manage_timer();
       Inputs_Permitted = true;
     break;
-    case Fan_Pin_PWR_Btn:               // Power on
+    case PWR_Input:                         // Power on
       handle_PWR_press();
     break;
-    case Fan_Pin_Time_Btn:              // Time
+    case Time_Input:                        // Time
       handle_btn_press(increment_time);
     break;
-    case Fan_Pin_Speed_Btn:             // Speed
+    case Speed_Input:                       // Speed
       handle_btn_press(increment_speed);
     break;
     }
