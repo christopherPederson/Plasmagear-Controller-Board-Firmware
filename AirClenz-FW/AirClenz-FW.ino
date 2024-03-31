@@ -12,23 +12,26 @@ typedef const int State_Option;
 
 //Define constants
 
-#define Fan_Pin_Speed_Lo   3
-#define Fan_Pin_Speed_Md   4
-#define Fan_Pin_Speed_Hi   5
-#define Fan_Pin_Time_90    6
-#define Fan_Pin_Time_60    7
-#define Fan_Pin_Time_30    8
-#define Fan_Pin_Speed_Btn  2
-#define Fan_Pin_Time_Btn   9
-#define Fan_Pin_PWR_Btn   11
-#define Fan_Pin_PWM       10
+#define Fan_Pin_Speed_Lo    3
+#define Fan_Pin_Speed_Md    4
+#define Fan_Pin_Speed_Hi    5
+#define Fan_Pin_Time_90     6
+#define Fan_Pin_Time_60     7
+#define Fan_Pin_Time_30     8
+#define Fan_Pin_Speed_Btn   2
+#define Fan_Pin_Time_Btn    9
+#define Fan_Pin_PWR_Btn     11
+#define Fan_Pin_PWM         10
+#define Auth_LED_Pin        13
+#define Programing_Auth_Pin 14
 
 #define PWM_Frequency  20000 //fan control PWM frequency to 20KHz (trust me bro)
 
-State_Option No_Input = -1;
-State_Option Time_Input = Fan_Pin_Time_Btn;
-State_Option Speed_Input = Fan_Pin_Speed_Btn;
-State_Option PWR_Input = Fan_Pin_PWR_Btn;
+State_Option No_Input =     -1;
+State_Option Time_Input =   Fan_Pin_Time_Btn;
+State_Option Speed_Input =  Fan_Pin_Speed_Btn;
+State_Option PWR_Input =    Fan_Pin_PWR_Btn;
+State_Option Auth_Input =   Programing_Auth_Pin;
 
 //Define utility constants
 const int     Speed_Value_Ary[] = { 0, 77, 179, 255 };                                      // used to set PWM duty cycle
@@ -156,20 +159,17 @@ handle_PWR_press()
   State_Option
 check_input()  // looks for active pins
   {
-  if (digitalRead(Fan_Pin_PWR_Btn) == HIGH)
-      {
-      return(PWR_Input);
-      }
+  if (digitalRead(Programing_Auth_Pin) == HIGH)
+      return(Auth_Input);
     else
-      if (digitalRead(Fan_Pin_Time_Btn) == HIGH)
-          {
-          return(Time_Input);
-          }
-        else 
-          if (digitalRead(Fan_Pin_Speed_Btn) == HIGH)
-              {
-              return(Speed_Input);
-              }
+      if (digitalRead(Fan_Pin_PWR_Btn) == HIGH)
+          return(PWR_Input);
+        else
+          if (digitalRead(Fan_Pin_Time_Btn) == HIGH)
+              return(Time_Input);
+            else 
+              if (digitalRead(Fan_Pin_Speed_Btn) == HIGH)
+                  return(Speed_Input);
   return No_Input;
   }
 
@@ -180,6 +180,15 @@ set_leds_high()
     {
     digitalWrite(LED_Pin_Ary[i], HIGH);
     }
+  }
+
+  void
+blink_auth_indicator()
+  {
+  digitalWrite(Auth_LED_Pin, LOW);
+  delay(10);
+  digitalWrite(Auth_LED_Pin, HIGH);
+  delay(10);
   }
 
 
@@ -201,6 +210,8 @@ setup()
   pinMode(Fan_Pin_Time_Btn, INPUT);
   pinMode(Fan_Pin_PWR_Btn, INPUT);
   pinMode(Fan_Pin_PWM, OUTPUT);
+  pinMode(Programing_Auth_Pin, INPUT);
+  pinMode(Auth_LED_Pin, OUTPUT);
   //
   // Set PWM frequency
   InitTimersSafe();
@@ -212,6 +223,9 @@ loop()
   {
   switch (check_input())
     {
+    case Auth_Input:                        // Programmer Detected
+      blink_auth_indicator();
+    break;
     case No_Input:                          // No Input
       manage_timer();
       Inputs_Permitted = true;
