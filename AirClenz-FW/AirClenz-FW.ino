@@ -186,9 +186,9 @@ set_leds_high()
 blink_auth_indicator()
   {
   digitalWrite(Auth_LED_Pin, LOW);
-  delay(10);
+  delay(500);
   digitalWrite(Auth_LED_Pin, HIGH);
-  delay(10);
+  delay(500);
   }
 
 
